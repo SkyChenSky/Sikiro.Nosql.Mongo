@@ -3,6 +3,7 @@ using System.Collections.Generic;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
 using Framework.MongoDB.Extension;
+using Framework.MongoDB.Model;
 using FrameWork.Extension;
 using FrameWork.MongoDB.MongoDbConfig;
 using MongoDB.Driver;
@@ -594,6 +595,107 @@ namespace FrameWork.MongoDB
                 find = find.Limit(limit);
 
             return await find.ToListAsync().ConfigureAwait(false);
+        }
+        #endregion
+
+        #endregion
+
+        #region 分页
+
+        #region 分页（同步）
+
+        /// <summary>
+        /// 分页
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="predicate">过滤条件</param>
+        /// <param name="projector">查询字段</param>
+        /// <param name="pageIndex">页码</param>
+        /// <param name="pageSize">页项</param>
+        /// <param name="orderby">排序字段</param>
+        /// <param name="desc">顺序、倒叙</param>
+        /// <returns></returns>
+        public PageList<T> PageList<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector, int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
+        {
+            return PageListAsync(predicate, projector, pageIndex, pageSize, orderby, desc).Result;
+        }
+
+        /// <summary>
+        /// 分页
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="database">库</param>
+        /// <param name="collection">集合</param>
+        /// <param name="predicate">过滤条件</param>
+        /// <param name="projector">查询字段</param>
+        /// <param name="pageIndex">页码</param>
+        /// <param name="pageSize">页项</param>
+        /// <param name="orderby">排序字段</param>
+        /// <param name="desc">顺序、倒叙</param>
+        /// <returns></returns>
+        public PageList<T> PageList<T>(string database, string collection, Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector, int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
+        {
+            return PageListAsync(database, collection, predicate, projector, pageIndex, pageSize, orderby, desc).Result;
+        }
+
+        #endregion
+
+        #region 分页（异步）
+        /// <summary>
+        /// 分页
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="predicate">过滤条件</param>
+        /// <param name="projector">查询字段</param>
+        /// <param name="pageIndex">页码</param>
+        /// <param name="pageSize">页项</param>
+        /// <param name="orderby">排序字段</param>
+        /// <param name="desc">顺序、倒叙</param>
+        /// <returns></returns>
+        public async Task<PageList<T>> PageListAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector, int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
+        {
+            var mongoAttribute = typeof(T).GetAttribute<MongoAttribute>();
+            if (mongoAttribute.IsNull())
+                throw new ArgumentException("MongoAttribute不能为空");
+
+            return await PageListAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector, pageIndex, pageSize, orderby, desc);
+        }
+
+        /// <summary>
+        /// 分页
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="database">库</param>
+        /// <param name="collection">集合</param>
+        /// <param name="predicate">过滤条件</param>
+        /// <param name="projector">查询字段</param>
+        /// <param name="pageIndex">页码</param>
+        /// <param name="pageSize">页项</param>
+        /// <param name="orderby">排序字段</param>
+        /// <param name="desc">顺序、倒叙</param>
+        /// <returns></returns>
+        public async Task<PageList<T>> PageListAsync<T>(string database, string collection, Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector, int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
+        {
+            var db = _mongoClient.GetDatabase(database);
+            var coll = db.GetCollection<T>(collection);
+
+            var count = (int)await coll.CountAsync<T>(predicate).ConfigureAwait(false);
+
+            var find = coll.Find(predicate);
+
+            if (projector.IsNotNull())
+                find = find.Project(projector);
+
+            if (orderby != null)
+            {
+                find = desc ? find.SortByDescending(@orderby) : find.SortBy(@orderby);
+            }
+
+            find = find.Skip((pageIndex - 1) * pageSize).Limit(pageSize);
+
+            var items = await find.ToListAsync().ConfigureAwait(false);
+
+            return new PageList<T>(pageIndex, pageSize, count, items);
         }
         #endregion
 

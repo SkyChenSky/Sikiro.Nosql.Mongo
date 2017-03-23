@@ -53,6 +53,7 @@
   <ItemGroup>
     <Compile Include="Extension\MongoDbExpression.cs" />
     <Compile Include="Extension\MongoDbExtension.cs" />
+    <Compile Include="Model\PageList.cs" />
     <Compile Include="MongoDbConfig\MongoAttribute.cs" />
     <Compile Include="MongoDbConfig\MongoEntity.cs" />
     <Compile Include="MongoDbService.cs" />
