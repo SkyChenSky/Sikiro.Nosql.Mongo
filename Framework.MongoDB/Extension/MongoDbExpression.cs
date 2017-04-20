@@ -92,42 +92,10 @@ namespace Framework.MongoDB.Extension
         {
             UpdateDefinition<T> updateDefinition;
 
-            var value = ((ConstantExpression)node.Right).Value;
-            if (node.Type == typeof(int))
+            dynamic value = ((ConstantExpression)node.Right).Value;
+            if (node.Type.IsValueType)
             {
-                var realValue = (int)value;
-                if (node.NodeType == ExpressionType.Decrement)
-                    realValue = -realValue;
-
-                updateDefinition = Builders<T>.Update.Inc(_fieldname, realValue);
-            }
-            else if (node.Type == typeof(long))
-            {
-                var realValue = (long)value;
-                if (node.NodeType == ExpressionType.Decrement)
-                    realValue = -realValue;
-
-                updateDefinition = Builders<T>.Update.Inc(_fieldname, realValue);
-            }
-            else if (node.Type == typeof(double))
-            {
-                var realValue = (double)value;
-                if (node.NodeType == ExpressionType.Decrement)
-                    realValue = -realValue;
-
-                updateDefinition = Builders<T>.Update.Inc(_fieldname, realValue);
-            }
-            else if (node.Type == typeof(decimal))
-            {
-                var realValue = (decimal)value;
-                if (node.NodeType == ExpressionType.Decrement)
-                    realValue = -realValue;
-
-                updateDefinition = Builders<T>.Update.Inc(_fieldname, realValue);
-            }
-            else if (node.Type == typeof(float))
-            {
-                var realValue = (float)value;
+                var realValue = value;
                 if (node.NodeType == ExpressionType.Decrement)
                     realValue = -realValue;
 
