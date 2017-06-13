@@ -54,7 +54,9 @@
     <Compile Include="Extension\MongoDbExpression.cs" />
     <Compile Include="Extension\MongoDbExtension.cs" />
     <Compile Include="Model\PageList.cs" />
+    <Compile Include="Model\Types.cs" />
     <Compile Include="MongoDbConfig\MongoAttribute.cs" />
+    <Compile Include="MongoDbConfig\MongoEntension.cs" />
     <Compile Include="MongoDbConfig\MongoEntity.cs" />
     <Compile Include="MongoDbService.cs" />
     <Compile Include="Properties\AssemblyInfo.cs" />

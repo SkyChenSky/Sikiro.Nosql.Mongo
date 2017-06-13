@@ -3,7 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
-using FrameWork.Extension;
+using Framework.Extension;
+using Framework.Helper;
+using Framework.MongoDB.Model;
+using FrameWork.MongoDB.MongoDbConfig;
 using MongoDB.Driver;
 
 namespace Framework.MongoDB.Extension
@@ -21,7 +24,7 @@ namespace Framework.MongoDB.Extension
         /// <returns></returns>
         internal static UpdateDefinition<T> GetUpdateDefinition<T>(this T entity)
         {
-            var properties = typeof(T).GetProperties(BindingFlags.Instance | BindingFlags.Public);
+            var properties = typeof(T).GetEntityProperties();
 
             var updateDefinitionList = GetUpdateDefinitionList<T>(properties, entity);
 
@@ -45,7 +48,7 @@ namespace Framework.MongoDB.Extension
 
             foreach (var propertyInfo in propertyInfos)
             {
-                if (propertyInfo.PropertyType.IsArray || typeof(IList).IsAssignableFrom(propertyInfo.PropertyType))
+                if (propertyInfo.PropertyType.IsArray || Types.IList.IsAssignableFrom(propertyInfo.PropertyType))
                 {
                     var value = propertyInfo.GetValue(entity) as IList;
 
@@ -56,8 +59,11 @@ namespace Framework.MongoDB.Extension
                 else
                 {
                     var value = propertyInfo.GetValue(entity);
-                    if (propertyInfo.PropertyType == typeof(decimal))
+
+                    if (propertyInfo.PropertyType == Types.Decimal)
                         value = value.ToString();
+                    else if (propertyInfo.PropertyType.IsEnum)
+                        value = (int)value;
 
                     var filedName = propertyInfo.Name;
 
@@ -66,6 +72,16 @@ namespace Framework.MongoDB.Extension
             }
 
             return updateDefinitionList;
+        }
+
+        /// <summary>
+        /// 获取特性信息
+        /// </summary>
+        /// <param name="type"></param>
+        /// <returns></returns>
+        internal static MongoAttribute GetMongoAttribute(this Type type)
+        {
+            return AttributeHelper<MongoAttribute>.GetAttribute(type);
         }
     }
 }

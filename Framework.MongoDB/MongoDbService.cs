@@ -6,6 +6,7 @@ using Framework.MongoDB.Extension;
 using Framework.MongoDB.Model;
 using FrameWork.Extension;
 using FrameWork.MongoDB.MongoDbConfig;
+using MongoDB.Bson.Serialization.Conventions;
 using MongoDB.Driver;
 
 namespace FrameWork.MongoDB
@@ -23,6 +24,7 @@ namespace FrameWork.MongoDB
 
         public MongoDbService()
         {
+            ConventionRegistry.Register("IgnoreExtraElements", new ConventionPack { new IgnoreExtraElementsConvention(true) }, type => true);
             _mongoClient = new MongoClient(_connString);
         }
 
@@ -81,7 +83,7 @@ namespace FrameWork.MongoDB
         /// <returns></returns>
         public async Task AddAsync<T>(T entity) where T : MongoEntity
         {
-            var mongoAttribute = entity.GetAttribute<MongoAttribute>();
+            var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
@@ -117,7 +119,7 @@ namespace FrameWork.MongoDB
         /// <param name="entity">实体(文档)</param>
         public async Task BatchAddAsync<T>(List<T> entity) where T : MongoEntity
         {
-            var mongoAttribute = entity.GetAttribute<MongoAttribute>();
+            var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
@@ -146,7 +148,7 @@ namespace FrameWork.MongoDB
         /// <param name="entity">实体(文档)</param>
         public void BatchAdd<T>(List<T> entity) where T : MongoEntity
         {
-            var mongoAttribute = entity.GetAttribute<MongoAttribute>();
+            var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
@@ -232,7 +234,7 @@ namespace FrameWork.MongoDB
         public async Task<long> DeleteAsync<T>(Expression<Func<T, bool>> predicate)
           where T : MongoEntity
         {
-            var mongoAttribute = typeof(T).GetAttribute<MongoAttribute>();
+            var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
@@ -363,7 +365,7 @@ namespace FrameWork.MongoDB
         /// <returns></returns>
         public async Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, T entity) where T : MongoEntity
         {
-            var mongoAttribute = typeof(T).GetAttribute<MongoAttribute>();
+            var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
@@ -427,7 +429,7 @@ namespace FrameWork.MongoDB
         /// <returns></returns>
         public async Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> lambda) where T : MongoEntity
         {
-            var mongoAttribute = typeof(T).GetAttribute<MongoAttribute>();
+            var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
@@ -484,7 +486,7 @@ namespace FrameWork.MongoDB
         public async Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector = null)
             where T : MongoEntity
         {
-            var mongoAttribute = typeof(T).GetAttribute<MongoAttribute>();
+            var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
@@ -563,7 +565,7 @@ namespace FrameWork.MongoDB
         public async Task<List<T>> ListAsync<T>(
            Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector = null, int? limit = null) where T : MongoEntity
         {
-            var mongoAttribute = typeof(T).GetAttribute<MongoAttribute>();
+            var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
@@ -654,7 +656,7 @@ namespace FrameWork.MongoDB
         /// <returns></returns>
         public async Task<PageList<T>> PageListAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector, int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
         {
-            var mongoAttribute = typeof(T).GetAttribute<MongoAttribute>();
+            var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 

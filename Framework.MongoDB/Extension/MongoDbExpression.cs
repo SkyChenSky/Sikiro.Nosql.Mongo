@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using Framework.MongoDB.Model;
 using MongoDB.Driver;
 
 namespace Framework.MongoDB.Extension
@@ -67,7 +68,7 @@ namespace Framework.MongoDB.Extension
 
                 if (memberAssignment.Expression.NodeType == ExpressionType.MemberInit)
                 {
-                    var lambda = Expression.Lambda<Func<object>>(Expression.Convert(memberAssignment.Expression, typeof(object)));
+                    var lambda = Expression.Lambda<Func<object>>(Expression.Convert(memberAssignment.Expression, Types.Object));
                     var value = lambda.Compile().Invoke();
                     UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, value));
                 }
@@ -90,21 +91,37 @@ namespace Framework.MongoDB.Extension
         /// <returns></returns>
         protected override Expression VisitBinary(BinaryExpression node)
         {
-            UpdateDefinition<T> updateDefinition;
+            var value = ((ConstantExpression)node.Right).Value;
 
-            dynamic value = ((ConstantExpression)node.Right).Value;
-            if (node.Type.IsValueType)
+            if (node.NodeType == ExpressionType.Decrement)
             {
-                var realValue = value;
-                if (node.NodeType == ExpressionType.Decrement)
-                    realValue = -realValue;
+                if (node.Type == Types.Int)
+                {
+                    value = -(int)value;
+                }
+                else if (node.Type == Types.Long)
+                {
+                    value = -(long)value;
+                }
+                else if (node.Type == Types.Double)
+                {
+                    value = -(double)value;
+                }
+                else if (node.Type == Types.Decimal)
+                {
+                    value = -(decimal)value;
+                }
+                else if (node.Type == Types.Float)
+                {
+                    value = -(float)value;
+                }
+                else
+                {
+                    throw new Exception(_fieldname + "不支持该类型操作");
+                }
+            }
 
-                updateDefinition = Builders<T>.Update.Inc(_fieldname, realValue);
-            }
-            else
-            {
-                throw new Exception(_fieldname + "不支持该类型操作");
-            }
+            var updateDefinition = Builders<T>.Update.Inc(_fieldname, value);
 
             UpdateDefinitionList.Add(updateDefinition);
 
@@ -121,9 +138,7 @@ namespace Framework.MongoDB.Extension
         /// <returns></returns>
         protected override Expression VisitNewArray(NewArrayExpression node)
         {
-            var listLambda = Expression.Lambda<Func<IList>>(node);
-            var list = listLambda.Compile().Invoke();
-            UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, list));
+            SetList(node);
 
             return node;
         }
@@ -135,11 +150,16 @@ namespace Framework.MongoDB.Extension
         /// <returns></returns>
         protected override Expression VisitListInit(ListInitExpression node)
         {
+            SetList(node);
+
+            return node;
+        }
+
+        private void SetList(Expression node)
+        {
             var listLambda = Expression.Lambda<Func<IList>>(node);
             var list = listLambda.Compile().Invoke();
             UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, list));
-
-            return node;
         }
         #endregion
 
@@ -178,7 +198,7 @@ namespace Framework.MongoDB.Extension
             }
             else
             {
-                var lambda = Expression.Lambda<Func<object>>(Expression.Convert(node, typeof(object)));
+                var lambda = Expression.Lambda<Func<object>>(Expression.Convert(node, Types.Object));
                 var value = lambda.Compile().Invoke();
 
                 if (node.Type.IsEnum)
