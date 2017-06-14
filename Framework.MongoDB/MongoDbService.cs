@@ -81,13 +81,13 @@ namespace FrameWork.MongoDB
         /// <typeparam name="T"></typeparam>
         /// <param name="entity">实体(文档)</param>
         /// <returns></returns>
-        public async Task AddAsync<T>(T entity) where T : MongoEntity
+        public Task AddAsync<T>(T entity) where T : MongoEntity
         {
             var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
-            await AddAsync(mongoAttribute.Database, mongoAttribute.Collection, entity);
+            return AddAsync(mongoAttribute.Database, mongoAttribute.Collection, entity);
         }
 
         #endregion
