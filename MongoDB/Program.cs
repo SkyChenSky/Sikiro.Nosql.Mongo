@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
+using Framework.MongoDB.Model;
 using FrameWork.MongoDB;
 
 namespace MongoDB
@@ -11,8 +13,17 @@ namespace MongoDB
             //增
             var id = Add();
 
+            //列表
+            var list = List();
+
+            //批量插入
+            BatchInser();
+
             //改
             Update(id);
+
+            //分页列表
+            var pageList = PageList().Items;
 
             //查
             var data = Get(id);
@@ -68,6 +79,34 @@ namespace MongoDB
         static void Delete(User entity)
         {
             new MongoDbService().Delete(entity);
+        }
+
+        static PageList<User> PageList()
+        {
+            return new MongoDbService().PageList<User>(a => true);
+        }
+
+        static List<User> List()
+        {
+            return new MongoDbService().List<User>(a => true);
+        }
+
+        static void BatchInser()
+        {
+            var listUser = Enumerable.Range(0, 100).Select(i => new User
+            {
+                _id = Guid.NewGuid().ToString("N"),
+                Age = i,
+                Name = "chengong" + i,
+                Son = new User
+                    {
+                        Age = i,
+                        Name = "xiaochenpi" + i
+                    },
+                BirthDateTime = DateTime.Now
+            }).ToList();
+
+            new MongoDbService().BatchAdd(listUser);
         }
     }
 }

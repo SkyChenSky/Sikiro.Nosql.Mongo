@@ -123,7 +123,10 @@ namespace FrameWork.MongoDB
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
-            await BatchAddAsync(mongoAttribute.Database, mongoAttribute.Collection, entity);
+            var db = _mongoClient.GetDatabase(mongoAttribute.Database);
+            var coll = db.GetCollection<T>(mongoAttribute.Collection);
+
+            await coll.InsertManyAsync(entity).ConfigureAwait(false);
         }
         #endregion
 
@@ -148,11 +151,7 @@ namespace FrameWork.MongoDB
         /// <param name="entity">实体(文档)</param>
         public void BatchAdd<T>(List<T> entity) where T : MongoEntity
         {
-            var mongoAttribute = typeof(T).GetMongoAttribute();
-            if (mongoAttribute.IsNull())
-                throw new ArgumentException("MongoAttribute不能为空");
-
-            BatchAdd(mongoAttribute.Database, mongoAttribute.Collection, entity);
+            BatchAddAsync(entity).Wait();
         }
         #endregion
 
@@ -220,9 +219,9 @@ namespace FrameWork.MongoDB
         /// <typeparam name="T"></typeparam>
         /// <param name="entity">实体</param>
         /// <returns></returns>
-        public async Task<long> DeleteAsync<T>(T entity) where T : MongoEntity
+        public Task<long> DeleteAsync<T>(T entity) where T : MongoEntity
         {
-            return await DeleteAsync<T>(a => a._id == entity._id);
+            return DeleteAsync<T>(a => a._id == entity._id);
         }
 
         /// <summary>
@@ -231,14 +230,14 @@ namespace FrameWork.MongoDB
         /// <typeparam name="T"></typeparam>
         /// <param name="predicate">实体</param>
         /// <returns></returns>
-        public async Task<long> DeleteAsync<T>(Expression<Func<T, bool>> predicate)
+        public Task<long> DeleteAsync<T>(Expression<Func<T, bool>> predicate)
           where T : MongoEntity
         {
             var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
-            return await DeleteAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate);
+            return DeleteAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate);
         }
 
         /// <summary>
@@ -249,9 +248,9 @@ namespace FrameWork.MongoDB
         /// <param name="collection">集合</param>
         /// <param name="entity">实体</param>
         /// <returns></returns>
-        public async Task<long> DeleteAsync<T>(string database, string collection, T entity) where T : MongoEntity
+        public Task<long> DeleteAsync<T>(string database, string collection, T entity) where T : MongoEntity
         {
-            return await DeleteAsync<T>(database, collection, e => e._id == entity._id);
+            return DeleteAsync<T>(database, collection, e => e._id == entity._id);
         }
 
         /// <summary>
@@ -351,9 +350,9 @@ namespace FrameWork.MongoDB
         /// <typeparam name="T"></typeparam>
         /// <param name="entity">实体（根据主键更新）</param>
         /// <returns></returns>
-        public async Task<long> UpdateAsync<T>(T entity) where T : MongoEntity
+        public Task<long> UpdateAsync<T>(T entity) where T : MongoEntity
         {
-            return await UpdateAsync(a => a._id == entity._id, entity);
+            return UpdateAsync(a => a._id == entity._id, entity);
         }
 
         /// <summary>
@@ -363,13 +362,13 @@ namespace FrameWork.MongoDB
         /// <param name="predicate">条件</param>
         /// <param name="entity">实体（根据主键更新）</param>
         /// <returns></returns>
-        public async Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, T entity) where T : MongoEntity
+        public Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, T entity) where T : MongoEntity
         {
             var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
-            return await UpdateAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, entity);
+            return UpdateAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, entity);
         }
 
         /// <summary>
@@ -427,13 +426,13 @@ namespace FrameWork.MongoDB
         /// <param name="predicate">条件</param>
         /// <param name="lambda">实体</param>
         /// <returns></returns>
-        public async Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> lambda) where T : MongoEntity
+        public Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> lambda) where T : MongoEntity
         {
             var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
-            return await UpdateAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, lambda);
+            return UpdateAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, lambda);
         }
 
         #endregion
@@ -483,14 +482,14 @@ namespace FrameWork.MongoDB
         /// <param name="predicate">查询条件</param>
         /// <param name="projector">查询字段</param>
         /// <returns></returns>
-        public async Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector = null)
+        public Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector = null)
             where T : MongoEntity
         {
             var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
-            return await GetAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector);
+            return GetAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector);
         }
 
         /// <summary>
@@ -562,14 +561,14 @@ namespace FrameWork.MongoDB
         /// <param name="projector">查询字段</param>
         /// <param name="limit"></param>
         /// <returns></returns>
-        public async Task<List<T>> ListAsync<T>(
+        public Task<List<T>> ListAsync<T>(
            Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector = null, int? limit = null) where T : MongoEntity
         {
             var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
-            return await ListAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector, limit);
+            return ListAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector, limit);
         }
 
         /// <summary>
@@ -617,7 +616,7 @@ namespace FrameWork.MongoDB
         /// <param name="orderby">排序字段</param>
         /// <param name="desc">顺序、倒叙</param>
         /// <returns></returns>
-        public PageList<T> PageList<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector, int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
+        public PageList<T> PageList<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector = null, int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
         {
             return PageListAsync(predicate, projector, pageIndex, pageSize, orderby, desc).Result;
         }
@@ -654,13 +653,13 @@ namespace FrameWork.MongoDB
         /// <param name="orderby">排序字段</param>
         /// <param name="desc">顺序、倒叙</param>
         /// <returns></returns>
-        public async Task<PageList<T>> PageListAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector, int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
+        public Task<PageList<T>> PageListAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector, int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
         {
             var mongoAttribute = typeof(T).GetMongoAttribute();
             if (mongoAttribute.IsNull())
                 throw new ArgumentException("MongoAttribute不能为空");
 
-            return await PageListAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector, pageIndex, pageSize, orderby, desc);
+            return PageListAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector, pageIndex, pageSize, orderby, desc);
         }
 
         /// <summary>
