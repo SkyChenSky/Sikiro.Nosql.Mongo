@@ -34,6 +34,8 @@ namespace Sikiro.Nosql.Mongo.Samples
 
             mongoRepository.Update<User>(a => a.Id == u.Id, a => new User { AddressList = new List<string> { "guangdong", "jiangmen", "cuihuwan" } });
 
+            mongoRepository.Exists<User>(a => a.Id == u.Id);
+
             mongoRepository.Delete<User>(a => a.Id == u.Id);
         }
     }

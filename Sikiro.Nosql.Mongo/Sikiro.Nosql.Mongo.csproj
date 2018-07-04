@@ -2,6 +2,14 @@
 
   <PropertyGroup>
     <TargetFramework>netstandard2.0</TargetFramework>
+    <PackageLicenseUrl>https://github.com/SkyChenSky/Sikiro.Nosql.Mongo/blob/master/LICENSE</PackageLicenseUrl>
+    <PackageProjectUrl>https://github.com/SkyChenSky/Sikiro.Nosql.Mongo</PackageProjectUrl>
+    <RepositoryUrl>https://github.com/SkyChenSky/Sikiro.Nosql.Mongo</RepositoryUrl>
+    <RepositoryType>github</RepositoryType>
+    <PackageTags>Sikiro.Nosql.Mongo Sikiro Mongo Nosql</PackageTags>
+    <Authors>陈珙</Authors>
+    <Company>陈珙</Company>
+    <Description>Easy to use mongo repository</Description>
   </PropertyGroup>
 
   <ItemGroup>
