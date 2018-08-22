@@ -3,14 +3,23 @@ using MongoDB.Bson.Serialization.Attributes;
 
 namespace Sikiro.Nosql.Mongo.Base
 {
-    public class MongoEntity
+    public abstract class MongoEntity
     {
-        public MongoEntity()
+        private string _id;
+        protected MongoEntity()
         {
-            Id = Guid.NewGuid().ToString("N");
+            _id = Guid.NewGuid().ToString("N");
         }
 
         [BsonElement("_id")]
-        public string Id { get; set; }
+        public string Id
+        {
+            set => _id = value;
+            get
+            {
+                _id = _id ?? Guid.NewGuid().ToString("N");
+                return _id;
+            }
+        }
     }
 }
