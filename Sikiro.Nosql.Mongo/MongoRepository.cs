@@ -1143,6 +1143,47 @@ namespace Sikiro.Nosql.Mongo
             return coll.Count(predicate);
         }
         #endregion
+
+        #region 原子操作
+
+        /// <summary>
+        /// 查询出更新结果
+        /// </summary>
+        /// <typeparam name="T"></typeparam>
+        /// <param name="database"></param>
+        /// <param name="collection"></param>
+        /// <param name="predicate"></param>
+        /// <param name="updateExpression"></param>
+        /// <returns></returns>
+        public T GetAndUpdate<T>(string database, string collection, Expression<Func<T, bool>> predicate, Expression<Func<T, T>> updateExpression)
+        {
+            var db = _mongoClient.GetDatabase(database);
+            var col = db.GetCollection<T>(collection);
+
+            var updateDefinitionList = MongoExpression<T>.GetUpdateDefinition(updateExpression);
+
+            var updateDefinitionBuilder = new UpdateDefinitionBuilder<T>().Combine(updateDefinitionList);
+
+            return col.FindOneAndUpdate(predicate, updateDefinitionBuilder, new FindOneAndUpdateOptions<T, T>
+            {
+                ReturnDocument = ReturnDocument.After
+            });
+        }
+
+        /// <summary>
+        /// 按条件查询条数
+        /// </summary>
+        /// <param name="predicate">条件</param>
+        /// <param name="updateExpression">更新结果</param>
+        /// <returns></returns>
+        public T GetAndUpdate<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> updateExpression)
+        {
+            var mongoAttribute = GetMongoAttribute<T>();
+
+            return GetAndUpdate(mongoAttribute.Database, mongoAttribute.Collection, predicate, updateExpression);
+        }
+
+        #endregion
     }
 
     #endregion

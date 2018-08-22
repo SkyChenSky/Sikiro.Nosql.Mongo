@@ -27,6 +27,8 @@ namespace Sikiro.Nosql.Mongo.Samples
 
             var addresult = mongoRepository.Add(u);
 
+            var upResulr = mongoRepository.GetAndUpdate<User>(a => a.Id == u.Id, a => new User { Sex = 3 });
+
             var getResult = mongoRepository.Get<User>(a => a.Id == u.Id);
             getResult.Name = "superskychen";
 
@@ -37,6 +39,8 @@ namespace Sikiro.Nosql.Mongo.Samples
             mongoRepository.Exists<User>(a => a.Id == u.Id);
 
             mongoRepository.Delete<User>(a => a.Id == u.Id);
+
+
         }
     }
 

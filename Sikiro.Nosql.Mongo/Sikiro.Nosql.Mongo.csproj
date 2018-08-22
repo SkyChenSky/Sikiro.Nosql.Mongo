@@ -1,7 +1,7 @@
 <Project Sdk="Microsoft.NET.Sdk">
 
   <PropertyGroup>
-    <TargetFramework>netstandard2.0</TargetFramework>
+    <TargetFrameworks>netstandard2.0;net45</TargetFrameworks>
     <PackageLicenseUrl>https://github.com/SkyChenSky/Sikiro.Nosql.Mongo/blob/master/LICENSE</PackageLicenseUrl>
     <PackageProjectUrl>https://github.com/SkyChenSky/Sikiro.Nosql.Mongo</PackageProjectUrl>
     <RepositoryUrl>https://github.com/SkyChenSky/Sikiro.Nosql.Mongo</RepositoryUrl>
@@ -10,10 +10,11 @@
     <Authors>陈珙</Authors>
     <Company>陈珙</Company>
     <Description>Easy to use mongo repository</Description>
+    <Version>1.0.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
-    <PackageReference Include="MongoDB.Driver" Version="2.7.0" />
+    <PackageReference Include="MongoDB.Driver" Version="2.4.0" />
   </ItemGroup>
 
   <ItemGroup>
