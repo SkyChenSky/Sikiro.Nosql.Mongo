@@ -197,9 +197,7 @@ namespace Sikiro.Nosql.Mongo.Extension
         /// <returns></returns>
         protected override Expression VisitConstant(ConstantExpression node)
         {
-            var value = node.Type.IsEnum ? (int)node.Value : node.Value;
-
-            UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, value));
+            UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, node.Value));
 
             return node;
         }

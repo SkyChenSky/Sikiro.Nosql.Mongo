@@ -17,7 +17,7 @@ namespace Sikiro.Nosql.Mongo.Samples
                 Name = "skychen",
                 BirthDateTime = new DateTime(1991, 2, 2),
                 AddressList = new List<string> { "guangdong", "guangzhou" },
-                Sex = 1,
+                Sex = Sex.Son,
                 Son = new User
                 {
                     Name = "xiaochenpi",
@@ -27,14 +27,19 @@ namespace Sikiro.Nosql.Mongo.Samples
 
             var addresult = mongoRepository.Add(u);
 
-            var upResulr = mongoRepository.GetAndUpdate<User>(a => a.Id == u.Id, a => new User { Sex = 3 });
+            mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
+            {
+                Sex = Sex.Son
+            });
+
+            var upResulr = mongoRepository.GetAndUpdate<User>(a => a.Id == u.Id, a => new User { Sex = Sex.Son });
 
             var getResult = mongoRepository.Get<User>(a => a.Id == u.Id);
             getResult.Name = "superskychen";
 
             mongoRepository.Update(getResult);
 
-            mongoRepository.Update<User>(a => a.Id == u.Id, a => new User { AddressList = new List<string> { "guangdong", "jiangmen", "cuihuwan" } });
+         
 
             mongoRepository.Exists<User>(a => a.Id == u.Id);
 
@@ -54,8 +59,14 @@ namespace Sikiro.Nosql.Mongo.Samples
 
         public User Son { get; set; }
 
-        public int Sex { get; set; }
+        public Sex Sex { get; set; }
 
         public List<string> AddressList { get; set; }
+    }
+
+    public enum Sex
+    {
+        Woman,
+        Son
     }
 }
