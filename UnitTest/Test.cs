@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using Microsoft.VisualStudio.TestTools.UnitTesting;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using MongoDB.Driver;
 using Sikiro.Nosql.Mongo;
@@ -21,27 +22,24 @@ namespace UnitTest
 
             public MongoDbTest()
             {
-                var url = "mongodb://10.1.20.143:27017";
+                var url = "";
                 MongoRepository = new MongoRepository(url);
             }
 
             [TestMethod]
             public void Add_Normal_IsTrue()
             {
-                var result = MongoRepository.Add(new User
+                MongoRepository.Add(new User
                 {
                     Age = 111,
                     Name = "chengongeee"
                 });
 
-                var result2 = MongoRepository.Add(new User
+                MongoRepository.Add(new User
                 {
                     Age = 111,
                     Name = "chengong100"
                 });
-
-                Assert.IsTrue(result);
-                Assert.IsTrue(result2);
             }
 
             #endregion
@@ -61,7 +59,7 @@ namespace UnitTest
                 user.Name = "updateName";
                 user.NumList = new List<int>();
 
-                user.Sons = new List<User> { new User { Id = "1231", Name = "aads" }, new User { Id = "123134", Name = "aads" } };
+                user.Sons = new List<User> { new User { Id = new ObjectId("6B16A8742B8B4920BEE43866D9B81925"), Name = "aads" }, new User { Id = new ObjectId("6B16A8742B8B4920BEE43866D9B81922"), Name = "aads" } };
 
                 user.AddressList = new List<string> { "123123", "asdsdf" };
 
@@ -80,7 +78,7 @@ namespace UnitTest
                 };
                 MongoRepository.Add(user);
 
-                var qwe = new List<User> { new User { Id = "1231", Name = "aads" }, new User { Id = "123134", Name = "aads" } };
+                var qwe = new List<User> { new User { Id = new ObjectId("6B16A8742B8B4920BEE43866D9B81925"), Name = "aads" }, new User { Id = new ObjectId("6B16A8742B8B4920BEE43866D9B81922"), Name = "aads" } };
 
                 var qwe2 = new List<string> { "123123", "asdsdf" };
 
@@ -278,7 +276,7 @@ namespace UnitTest
             [TestMethod]
             public void AddIfNotExist_Normal_IsTrue()
             {
-                var result = MongoRepository.AddIfNotExist("chenggongUpdateTest", "UserInfo", new User
+                var result = MongoRepository.AddIfNotExist("geshiimdb", "UserInfo", new User
                 {
                     Age = 2222,
                     Name = "chengongeee2222"
@@ -289,7 +287,7 @@ namespace UnitTest
             #endregion
         }
 
-        [Mongo("chengongtest", "User")]
+        [Mongo("geshiimdb", "User3")]
         public class User : MongoEntity
         {
             public string Name { get; set; }

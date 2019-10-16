@@ -10,17 +10,11 @@
     <Authors>陈珙</Authors>
     <Company>陈珙</Company>
     <Description>Easy to use mongo repository</Description>
-    <Version>1.1.0.0</Version>
+    <Version>1.1.0.1</Version>
   </PropertyGroup>
 
   <ItemGroup>
     <PackageReference Include="MongoDB.Driver" Version="2.4.0" />
-  </ItemGroup>
-
-  <ItemGroup>
-    <Reference Include="Microsoft.CSharp">
-      <HintPath>..\..\..\..\.nuget\packages\microsoft.netcore.app\2.0.0\ref\netcoreapp2.0\Microsoft.CSharp.dll</HintPath>
-    </Reference>
   </ItemGroup>
 
 </Project>

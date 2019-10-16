@@ -9,7 +9,7 @@ namespace Sikiro.Nosql.Mongo.Samples
     {
         static void Main(string[] args)
         {
-            var url = "mongodb://10.1.20.143:27017";
+            var url = "";
             var mongoRepository = new MongoRepository(url);
 
             var u = new User
@@ -25,11 +25,12 @@ namespace Sikiro.Nosql.Mongo.Samples
                 }
             };
 
-            var addresult = mongoRepository.Add(u);
+            mongoRepository.Add(u);
 
             mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
             {
-                Sex = Sex.Son
+                Sex = Sex.Son,
+                Age = a.Age + 2
             });
 
             var upResulr = mongoRepository.GetAndUpdate<User>(a => a.Id == u.Id, a => new User { Sex = Sex.Son });
@@ -39,7 +40,7 @@ namespace Sikiro.Nosql.Mongo.Samples
 
             mongoRepository.Update(getResult);
 
-         
+
 
             mongoRepository.Exists<User>(a => a.Id == u.Id);
 
@@ -49,7 +50,7 @@ namespace Sikiro.Nosql.Mongo.Samples
         }
     }
 
-    [Mongo("chengongtest", "User")]
+    [Mongo("geshiimdb", "User3")]
     public class User : MongoEntity
     {
         public string Name { get; set; }
@@ -60,6 +61,8 @@ namespace Sikiro.Nosql.Mongo.Samples
         public User Son { get; set; }
 
         public Sex Sex { get; set; }
+
+        public int Age { get; set; }
 
         public List<string> AddressList { get; set; }
     }

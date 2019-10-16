@@ -9,7 +9,7 @@ namespace Sikiro.Nosql.Mongo.Base
     /// </summary>
     public class MongoAttribute : Attribute
     {
-        public MongoAttribute(string database, string collection)
+        public MongoAttribute(string database, string collection = null)
         {
             Database = database;
             Collection = collection;

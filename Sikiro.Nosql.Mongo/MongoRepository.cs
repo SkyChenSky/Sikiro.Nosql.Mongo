@@ -1,8 +1,11 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Linq;
 using System.Linq.Expressions;
 using System.Threading.Tasks;
+using MongoDB.Bson.Serialization;
 using MongoDB.Bson.Serialization.Conventions;
+using MongoDB.Bson.Serialization.Serializers;
 using MongoDB.Driver;
 using Sikiro.Nosql.Mongo.Base;
 using Sikiro.Nosql.Mongo.Extension;
@@ -28,6 +31,8 @@ namespace Sikiro.Nosql.Mongo
         {
             ConventionRegistry.Register("IgnoreExtraElements",
                 new ConventionPack { new IgnoreExtraElementsConvention(true) }, type => true);
+
+            BsonSerializer.RegisterSerializer(typeof(DateTime), new DateTimeSerializer(DateTimeKind.Local));
         }
 
         #endregion
@@ -53,7 +58,7 @@ namespace Sikiro.Nosql.Mongo
         {
             var mongoAttribute = GetMongoAttribute<T>();
 
-            return GetCollection<T>(mongoAttribute.Database, mongoAttribute.Collection);
+            return GetCollection<T>(mongoAttribute.Database, mongoAttribute.Collection ?? typeof(T).Name);
         }
 
         public List<string> ListDatabases()
@@ -110,13 +115,11 @@ namespace Sikiro.Nosql.Mongo
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity">实体(文档)</param>
-        public bool Add<T>(T entity) where T : MongoEntity
+        public void Add<T>(T entity) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            Add(mongoAttribute.Database, mongoAttribute.Collection, entity);
-
-            return true;
+            coll.InsertOne(entity);
         }
 
         #endregion
@@ -146,9 +149,9 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public Task AddAsync<T>(T entity) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return AddAsync(mongoAttribute.Database, mongoAttribute.Collection, entity);
+            return coll.InsertOneAsync(entity);
         }
 
         #endregion
@@ -194,9 +197,13 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public bool AddIfNotExist<T>(T entity) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return AddIfNotExist(mongoAttribute.Database, mongoAttribute.Collection, entity);
+            if (coll.Count(a => a.Id == entity.Id) > 0)
+                return false;
+
+            coll.InsertOne(entity);
+            return true;
         }
 
         /// <summary>
@@ -207,9 +214,13 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public bool AddIfNotExist<T>(Expression<Func<T, bool>> predicate, T entity) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return AddIfNotExist(mongoAttribute.Database, mongoAttribute.Collection, predicate, entity);
+            if (coll.Count(predicate) > 0)
+                return false;
+
+            coll.InsertOne(entity);
+            return true;
         }
         #endregion
 
@@ -224,11 +235,14 @@ namespace Sikiro.Nosql.Mongo
         /// <param name="database">库</param>
         /// <param name="collection">集合（表）</param>
         /// <param name="entity">实体(文档)</param>
-        public Task BatchAddAsync<T>(string database, string collection, List<T> entity) where T : MongoEntity
+        public async Task BatchAddAsync<T>(string database, string collection, List<T> entity) where T : MongoEntity
         {
+            if (!entity.Any())
+                return;
+
             var coll = GetCollection<T>(database, collection);
 
-            return coll.InsertManyAsync(entity);
+            await coll.InsertManyAsync(entity);
         }
 
         /// <summary>
@@ -236,11 +250,14 @@ namespace Sikiro.Nosql.Mongo
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="entity">实体(文档)</param>
-        public Task BatchAddAsync<T>(List<T> entity) where T : MongoEntity
+        public async Task BatchAddAsync<T>(List<T> entity) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            if (!entity.Any())
+                return;
 
-            return BatchAddAsync(mongoAttribute.Database, mongoAttribute.Collection, entity);
+            var coll = GetCollection<T>();
+
+            await coll.InsertManyAsync(entity);
         }
 
         #endregion
@@ -256,6 +273,9 @@ namespace Sikiro.Nosql.Mongo
         /// <param name="entities"></param>
         public void BatchAdd<T>(string database, string collection, IEnumerable<T> entities) where T : MongoEntity
         {
+            if (!entities.Any())
+                return;
+
             var coll = GetCollection<T>(database, collection);
 
             coll.InsertMany(entities);
@@ -268,9 +288,12 @@ namespace Sikiro.Nosql.Mongo
         /// <param name="entities">实体(文档)</param>
         public void BatchAdd<T>(IEnumerable<T> entities) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            if (!entities.Any())
+                return;
 
-            BatchAdd(mongoAttribute.Database, mongoAttribute.Collection, entities);
+            var coll = GetCollection<T>();
+
+            coll.InsertMany(entities);
         }
 
         #endregion
@@ -315,9 +338,11 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public long Set<T>(T t) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return Set(mongoAttribute.Database, mongoAttribute.Collection, a => a.Id == t.Id, t);
+            var reuslt = coll.ReplaceOne(a => a.Id == t.Id, t, new UpdateOptions { IsUpsert = true });
+
+            return reuslt.ModifiedCount;
         }
         #endregion
 
@@ -358,9 +383,11 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public async Task<long> SetAsync<T>(T t) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return await SetAsync(mongoAttribute.Database, mongoAttribute.Collection, a => a.Id == t.Id, t);
+            var reuslt = await coll.ReplaceOneAsync(a => a.Id == t.Id, t, new UpdateOptions { IsUpsert = true });
+
+            return reuslt.ModifiedCount;
         }
         #endregion
         #endregion
@@ -386,9 +413,11 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public long Delete<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return Delete(mongoAttribute.Database, mongoAttribute.Collection, predicate);
+            var result = coll.DeleteMany(predicate).DeletedCount;
+
+            return result;
         }
 
         /// <summary>
@@ -429,11 +458,13 @@ namespace Sikiro.Nosql.Mongo
         /// <typeparam name="T"></typeparam>
         /// <param name="predicate">实体</param>
         /// <returns></returns>
-        public Task<long> DeleteAsync<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
+        public async Task<long> DeleteAsync<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return DeleteAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate);
+            var result = await coll.DeleteManyAsync(predicate);
+
+            return result.DeletedCount;
         }
 
         /// <summary>
@@ -481,22 +512,32 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public bool Update<T>(T entity) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return Update(mongoAttribute.Database, mongoAttribute.Collection, a => a.Id == entity.Id, entity) > 0;
+            var updateDefinitionList = entity.GetUpdateDefinition();
+
+            var result = coll.UpdateOne(a => a.Id == entity.Id, updateDefinitionList);
+
+            return result.ModifiedCount > 0;
         }
 
         /// <summary>
         /// 更新
         /// </summary>
-        /// <param name="predicate"></param>
-        /// <param name="expression"></param>
+        /// <param name="whereExpression"></param>
+        /// <param name="updateExpression"></param>
         /// <returns></returns>
-        public long Update<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> expression) where T : MongoEntity
+        public long Update<T>(Expression<Func<T, bool>> whereExpression, Expression<Func<T, T>> updateExpression) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return Update(mongoAttribute.Database, mongoAttribute.Collection, predicate, expression);
+            var updateDefinitionList = MongoExpression<T>.GetUpdateDefinition(updateExpression);
+
+            var updateDefinitionBuilder = new UpdateDefinitionBuilder<T>().Combine(updateDefinitionList);
+
+            var result = coll.UpdateMany<T>(whereExpression, updateDefinitionBuilder);
+
+            return result.ModifiedCount;
         }
 
         /// <summary>
@@ -525,18 +566,18 @@ namespace Sikiro.Nosql.Mongo
         /// <typeparam name="T"></typeparam>
         /// <param name="database">库</param>
         /// <param name="collection">集合</param>
-        /// <param name="predicate">条件</param>
-        /// <param name="lambda"></param>
+        /// <param name="whereExpression">条件</param>
+        /// <param name="updateExpression"></param>
         /// <returns></returns>
-        public long Update<T>(string database, string collection, Expression<Func<T, bool>> predicate, Expression<Func<T, T>> lambda) where T : MongoEntity
+        public long Update<T>(string database, string collection, Expression<Func<T, bool>> whereExpression, Expression<Func<T, T>> updateExpression) where T : MongoEntity
         {
             var coll = GetCollection<T>(database, collection);
 
-            var updateDefinitionList = MongoExpression<T>.GetUpdateDefinition(lambda);
+            var updateDefinitionList = MongoExpression<T>.GetUpdateDefinition(updateExpression);
 
             var updateDefinitionBuilder = new UpdateDefinitionBuilder<T>().Combine(updateDefinitionList);
 
-            var result = coll.UpdateMany<T>(predicate, updateDefinitionBuilder);
+            var result = coll.UpdateMany<T>(whereExpression, updateDefinitionBuilder);
 
             return result.ModifiedCount;
         }
@@ -563,11 +604,17 @@ namespace Sikiro.Nosql.Mongo
         /// <param name="predicate">条件</param>
         /// <param name="entity">实体（根据主键更新）</param>
         /// <returns></returns>
-        public Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, T entity) where T : MongoEntity
+        public async Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, T entity) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return UpdateAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, entity);
+            var updateDefinitionList = entity.GetUpdateDefinition();
+
+            var updateDefinitionBuilder = new UpdateDefinitionBuilder<T>().Combine(updateDefinitionList);
+
+            var result = await coll.UpdateOneAsync<T>(predicate, updateDefinitionBuilder);
+
+            return result.ModifiedCount;
         }
 
         /// <summary>
@@ -622,11 +669,17 @@ namespace Sikiro.Nosql.Mongo
         /// <param name="predicate">条件</param>
         /// <param name="lambda">实体</param>
         /// <returns></returns>
-        public Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> lambda) where T : MongoEntity
+        public async Task<long> UpdateAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> lambda) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return UpdateAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, lambda);
+            var updateDefinitionList = MongoExpression<T>.GetUpdateDefinition(lambda);
+
+            var updateDefinitionBuilder = new UpdateDefinitionBuilder<T>().Combine(updateDefinitionList);
+
+            var result = await coll.UpdateManyAsync<T>(predicate, updateDefinitionBuilder);
+
+            return result.ModifiedCount;
         }
 
         #endregion
@@ -655,9 +708,14 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public T Get<T>(Expression<Func<T, bool>> predicate, Func<Sort<T>, Sort<T>> sort) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return Get<T>(mongoAttribute.Database, mongoAttribute.Collection, predicate, a => a, sort);
+            var find = coll.Find(predicate);
+
+            if (sort != null)
+                find = find.Sort(sort.GetSortDefinition());
+
+            return find.FirstOrDefault();
         }
 
         /// <summary>
@@ -699,9 +757,14 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public TResult Get<T, TResult>(Expression<Func<T, bool>> predicate, Expression<Func<T, TResult>> selector, Func<Sort<T>, Sort<T>> sort) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return Get(mongoAttribute.Database, mongoAttribute.Collection, predicate, selector, sort);
+            var find = coll.Find(predicate);
+
+            if (sort != null)
+                find = find.Sort(sort.GetSortDefinition());
+
+            return find.Project(selector).FirstOrDefault();
         }
 
         /// <summary>
@@ -740,9 +803,13 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public Task<T> GetAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector = null) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return GetAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector);
+            var find = coll.Find(predicate);
+            if (projector != null)
+                find = find.Project(projector);
+
+            return find.FirstOrDefaultAsync();
         }
 
         /// <summary>
@@ -812,9 +879,17 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public List<TResult> ToList<T, TResult>(Expression<Func<T, bool>> predicate, Expression<Func<T, TResult>> selector, Func<Sort<T>, Sort<T>> sort, int? top) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return ToList(mongoAttribute.Database, mongoAttribute.Collection, predicate, selector, sort, top);
+            var find = coll.Find(predicate);
+
+            if (sort != null)
+                find = find.Sort(sort.GetSortDefinition());
+
+            if (top != null)
+                find = find.Limit(top);
+
+            return find.Project(selector).ToList();
         }
 
         /// <summary>
@@ -853,9 +928,7 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public List<T> ToList<T>(Expression<Func<T, bool>> predicate, Func<Sort<T>, Sort<T>> sort, int? top) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
-
-            return ToList(mongoAttribute.Database, mongoAttribute.Collection, predicate, a => a, sort, top);
+            return ToList(predicate, a => a, sort, top);
         }
 
         /// <summary>
@@ -893,9 +966,17 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public Task<List<T>> ToListAsync<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> projector = null, int? limit = null) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return ToListAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector, limit);
+            var find = coll.Find(predicate);
+
+            if (projector != null)
+                find = find.Project(projector);
+
+            if (limit != null)
+                find = find.Limit(limit);
+
+            return find.ToListAsync();
         }
 
         /// <summary>
@@ -975,9 +1056,20 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public PageList<TResult> PageList<T, TResult>(Expression<Func<T, bool>> predicate, Expression<Func<T, TResult>> selector, Func<Sort<T>, Sort<T>> sort, int pageIndex, int pageSize) where TResult : class
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return PageList(mongoAttribute.Database, mongoAttribute.Collection, predicate, selector, sort, pageIndex, pageSize);
+            var count = (int)coll.Count<T>(predicate);
+
+            var find = coll.Find(predicate);
+
+            if (sort != null)
+                find = find.Sort(sort.GetSortDefinition());
+
+            find = find.Skip((pageIndex - 1) * pageSize).Limit(pageSize);
+
+            var items = find.Project(selector).ToList();
+
+            return new PageList<TResult>(pageIndex, pageSize, count, items);
         }
 
         /// <summary>
@@ -1033,14 +1125,27 @@ namespace Sikiro.Nosql.Mongo
         /// <param name="orderby">排序字段</param>
         /// <param name="desc">顺序、倒叙</param>
         /// <returns></returns>
-        public Task<PageList<T>> PageListAsync<T>(Expression<Func<T, bool>> predicate,
+        public async Task<PageList<T>> PageListAsync<T>(Expression<Func<T, bool>> predicate,
             Expression<Func<T, T>> projector = null,
             int pageIndex = 1, int pageSize = 20, Expression<Func<T, object>> orderby = null, bool desc = false) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return PageListAsync(mongoAttribute.Database, mongoAttribute.Collection, predicate, projector, pageIndex,
-                pageSize, orderby, desc);
+            var count = (int)await coll.CountAsync<T>(predicate);
+
+            var find = coll.Find(predicate);
+
+            if (projector != null)
+                find = find.Project(projector);
+
+            if (orderby != null)
+                find = desc ? find.SortByDescending(@orderby) : find.SortBy(@orderby);
+
+            find = find.Skip((pageIndex - 1) * pageSize).Limit(pageSize);
+
+            var items = await find.ToListAsync();
+
+            return new PageList<T>(pageIndex, pageSize, count, items);
         }
 
         /// <summary>
@@ -1093,9 +1198,11 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public bool Exists<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return Exists(mongoAttribute.Database, mongoAttribute.Collection, predicate);
+            var result = coll.Count(predicate);
+
+            return result > 0;
         }
 
         /// <summary>
@@ -1122,11 +1229,11 @@ namespace Sikiro.Nosql.Mongo
         /// </summary>
         /// <param name="predicate">条件</param>
         /// <returns></returns>
-        public int Count<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
+        public long Count<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return (int)Count(mongoAttribute.Database, mongoAttribute.Collection, predicate);
+            return coll.Count(predicate);
         }
 
         /// <summary>
@@ -1157,14 +1264,13 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public T GetAndUpdate<T>(string database, string collection, Expression<Func<T, bool>> predicate, Expression<Func<T, T>> updateExpression)
         {
-            var db = _mongoClient.GetDatabase(database);
-            var col = db.GetCollection<T>(collection);
+            var coll = GetCollection<T>(database, collection);
 
             var updateDefinitionList = MongoExpression<T>.GetUpdateDefinition(updateExpression);
 
             var updateDefinitionBuilder = new UpdateDefinitionBuilder<T>().Combine(updateDefinitionList);
 
-            return col.FindOneAndUpdate(predicate, updateDefinitionBuilder, new FindOneAndUpdateOptions<T, T>
+            return coll.FindOneAndUpdate(predicate, updateDefinitionBuilder, new FindOneAndUpdateOptions<T, T>
             {
                 ReturnDocument = ReturnDocument.After
             });
@@ -1178,9 +1284,16 @@ namespace Sikiro.Nosql.Mongo
         /// <returns></returns>
         public T GetAndUpdate<T>(Expression<Func<T, bool>> predicate, Expression<Func<T, T>> updateExpression)
         {
-            var mongoAttribute = GetMongoAttribute<T>();
+            var coll = GetCollection<T>();
 
-            return GetAndUpdate(mongoAttribute.Database, mongoAttribute.Collection, predicate, updateExpression);
+            var updateDefinitionList = MongoExpression<T>.GetUpdateDefinition(updateExpression);
+
+            var updateDefinitionBuilder = new UpdateDefinitionBuilder<T>().Combine(updateDefinitionList);
+
+            return coll.FindOneAndUpdate(predicate, updateDefinitionBuilder, new FindOneAndUpdateOptions<T, T>
+            {
+                ReturnDocument = ReturnDocument.After
+            });
         }
 
         #endregion

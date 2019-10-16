@@ -3,8 +3,10 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Reflection;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Sikiro.Nosql.Mongo.Base;
+using Types = Sikiro.Nosql.Mongo.Base.Types;
 
 namespace Sikiro.Nosql.Mongo.Extension
 {
@@ -73,6 +75,7 @@ namespace Sikiro.Nosql.Mongo.Extension
                             case "String[]": updateDefinitionList.Add(Builders<T>.Update.Set(filedName, (string[])value)); break;
                             case "Int32[]": updateDefinitionList.Add(Builders<T>.Update.Set(filedName, (int[])value)); break;
                             case "Int64[]": updateDefinitionList.Add(Builders<T>.Update.Set(filedName, (long[])value)); break;
+                            case "ObjectId[]": updateDefinitionList.Add(Builders<T>.Update.Set(filedName, (ObjectId[])value)); break;
                             default: throw new Exception("This array type is not supported");
                         }
                     }

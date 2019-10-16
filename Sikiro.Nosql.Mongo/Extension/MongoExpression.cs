@@ -3,6 +3,7 @@ using System.Collections;
 using System.Collections.Generic;
 using System.Linq;
 using System.Linq.Expressions;
+using MongoDB.Bson;
 using MongoDB.Driver;
 using Sikiro.Nosql.Mongo.Base;
 
@@ -74,12 +75,67 @@ namespace Sikiro.Nosql.Mongo.Extension
                     var value = lambda.Compile().Invoke();
                     UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, value));
                 }
+                else if (memberAssignment.Expression.NodeType == ExpressionType.Call)
+                {
+                    ArrayOperate((MethodCallExpression)memberAssignment.Expression);
+                }
                 else
                 {
                     Visit(memberAssignment.Expression);
                 }
             }
             return node;
+        }
+
+        /// <summary>
+        /// 数组原子操作
+        /// </summary>
+        /// <param name="expression"></param>
+        private void ArrayOperate(MethodCallExpression expression)
+        {
+            var ex = expression.Arguments[1];
+
+            var value = GetValue(ex);
+            if (value == null)
+                return;
+
+            switch (expression.Method.Name)
+            {
+                case "Push":
+                    {
+                        var updateDefinition = Builders<T>.Update.Push(_fieldname, value);
+                        UpdateDefinitionList.Add(updateDefinition);
+                    }
+                    break;
+                case "Pull":
+                    {
+                        var updateDefinition = Builders<T>.Update.Pull(_fieldname, value);
+                        UpdateDefinitionList.Add(updateDefinition);
+                    }
+                    break;
+                case "AddToSet":
+                    {
+                        var updateDefinition = Builders<T>.Update.AddToSet(_fieldname, value);
+                        UpdateDefinitionList.Add(updateDefinition);
+                    }
+                    break;
+            }
+
+        }
+
+        private object GetValue(Expression ex)
+        {
+            if (ex.NodeType == ExpressionType.MemberAccess)
+            {
+                return ((MemberExpression)ex).MemberToValue();
+            }
+
+            if (ex.NodeType == ExpressionType.Constant)
+            {
+                return ((ConstantExpression)ex).Value;
+            }
+
+            throw new Exception("未知类型无法解析");
         }
 
         #endregion
@@ -170,6 +226,7 @@ namespace Sikiro.Nosql.Mongo.Extension
                     case "String[]": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (string[])value)); break;
                     case "Int32[]": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (int[])value)); break;
                     case "Int64[]": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (long[])value)); break;
+                    case "ObjectId[]": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (ObjectId[])value)); break;
                     default: throw new Exception("This array type is not supported");
                 }
             }
