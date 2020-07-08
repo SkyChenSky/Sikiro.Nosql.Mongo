@@ -5,7 +5,7 @@ namespace Sikiro.Nosql.Mongo.Extension
     public static class EnumerableExtension
     {
         /// <summary>
-        /// mongodb数组原子添加
+        /// 数组添加元素
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>
@@ -17,7 +17,7 @@ namespace Sikiro.Nosql.Mongo.Extension
         }
 
         /// <summary>
-        /// mongodb数组原子删除
+        /// 数组删除元素
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>
@@ -29,7 +29,7 @@ namespace Sikiro.Nosql.Mongo.Extension
         }
 
         /// <summary>
-        /// mongodb数组原子添加
+        /// 数组添加元素（非重复）
         /// </summary>
         /// <typeparam name="T"></typeparam>
         /// <param name="list"></param>

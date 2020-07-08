@@ -10,6 +10,7 @@ using Sikiro.Nosql.Mongo.Base;
 namespace Sikiro.Nosql.Mongo.Extension
 {
     #region Mongo更新字段表达式解析
+
     /// <inheritdoc />
     /// <summary>
     /// Mongo更新字段表达式解析
@@ -18,15 +19,18 @@ namespace Sikiro.Nosql.Mongo.Extension
     internal class MongoExpression<T> : ExpressionVisitor
     {
         #region 成员变量
+
         /// <summary>
         /// 更新列表
         /// </summary>
         internal List<UpdateDefinition<T>> UpdateDefinitionList = new List<UpdateDefinition<T>>();
+
         private string _fieldname;
 
         #endregion
 
         #region 获取更新列表
+
         /// <summary>
         /// 获取更新列表
         /// </summary>
@@ -39,9 +43,11 @@ namespace Sikiro.Nosql.Mongo.Extension
             mongoDb.Resolve(expression);
             return mongoDb.UpdateDefinitionList;
         }
+
         #endregion
 
         #region 解析表达式
+
         /// <summary>
         /// 解析表达式
         /// </summary>
@@ -50,6 +56,7 @@ namespace Sikiro.Nosql.Mongo.Extension
         {
             Visit(expression);
         }
+
         #endregion
 
         #region 访问对象初始化表达式
@@ -66,24 +73,26 @@ namespace Sikiro.Nosql.Mongo.Extension
 
             foreach (var item in bingdings)
             {
-                var memberAssignment = (MemberAssignment)item;
+                var memberAssignment = (MemberAssignment) item;
                 _fieldname = item.Member.Name;
 
                 if (memberAssignment.Expression.NodeType == ExpressionType.MemberInit)
                 {
-                    var lambda = Expression.Lambda<Func<object>>(Expression.Convert(memberAssignment.Expression, Types.Object));
+                    var lambda =
+                        Expression.Lambda<Func<object>>(Expression.Convert(memberAssignment.Expression, Types.Object));
                     var value = lambda.Compile().Invoke();
                     UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, value));
                 }
                 else if (memberAssignment.Expression.NodeType == ExpressionType.Call)
                 {
-                    ArrayOperate((MethodCallExpression)memberAssignment.Expression);
+                    ArrayOperate((MethodCallExpression) memberAssignment.Expression);
                 }
                 else
                 {
                     Visit(memberAssignment.Expression);
                 }
             }
+
             return node;
         }
 
@@ -102,22 +111,22 @@ namespace Sikiro.Nosql.Mongo.Extension
             switch (expression.Method.Name)
             {
                 case "Push":
-                    {
-                        var updateDefinition = Builders<T>.Update.Push(_fieldname, value);
-                        UpdateDefinitionList.Add(updateDefinition);
-                    }
+                {
+                    var updateDefinition = Builders<T>.Update.Push(_fieldname, value);
+                    UpdateDefinitionList.Add(updateDefinition);
+                }
                     break;
                 case "Pull":
-                    {
-                        var updateDefinition = Builders<T>.Update.Pull(_fieldname, value);
-                        UpdateDefinitionList.Add(updateDefinition);
-                    }
+                {
+                    var updateDefinition = Builders<T>.Update.Pull(_fieldname, value);
+                    UpdateDefinitionList.Add(updateDefinition);
+                }
                     break;
                 case "AddToSet":
-                    {
-                        var updateDefinition = Builders<T>.Update.AddToSet(_fieldname, value);
-                        UpdateDefinitionList.Add(updateDefinition);
-                    }
+                {
+                    var updateDefinition = Builders<T>.Update.AddToSet(_fieldname, value);
+                    UpdateDefinitionList.Add(updateDefinition);
+                }
                     break;
             }
 
@@ -127,12 +136,12 @@ namespace Sikiro.Nosql.Mongo.Extension
         {
             if (ex.NodeType == ExpressionType.MemberAccess)
             {
-                return ((MemberExpression)ex).MemberToValue();
+                return ((MemberExpression) ex).MemberToValue();
             }
 
             if (ex.NodeType == ExpressionType.Constant)
             {
-                return ((ConstantExpression)ex).Value;
+                return ((ConstantExpression) ex).Value;
             }
 
             throw new Exception("未知类型无法解析");
@@ -149,29 +158,29 @@ namespace Sikiro.Nosql.Mongo.Extension
         /// <returns></returns>
         protected override Expression VisitBinary(BinaryExpression node)
         {
-            var value = ((ConstantExpression)node.Right).Value;
+            var value = ((ConstantExpression) node.Right).Value;
 
             if (node.NodeType == ExpressionType.Decrement)
             {
                 if (node.Type == Types.Int)
                 {
-                    value = -(int)value;
+                    value = -(int) value;
                 }
                 else if (node.Type == Types.Long)
                 {
-                    value = -(long)value;
+                    value = -(long) value;
                 }
                 else if (node.Type == Types.Double)
                 {
-                    value = -(double)value;
+                    value = -(double) value;
                 }
                 else if (node.Type == Types.Decimal)
                 {
-                    value = -(decimal)value;
+                    value = -(decimal) value;
                 }
                 else if (node.Type == Types.Float)
                 {
-                    value = -(float)value;
+                    value = -(float) value;
                 }
                 else
                 {
@@ -185,6 +194,7 @@ namespace Sikiro.Nosql.Mongo.Extension
 
             return node;
         }
+
         #endregion
 
         #region 访问数组表达式
@@ -223,10 +233,18 @@ namespace Sikiro.Nosql.Mongo.Extension
             {
                 switch (node.Type.Name)
                 {
-                    case "String[]": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (string[])value)); break;
-                    case "Int32[]": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (int[])value)); break;
-                    case "Int64[]": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (long[])value)); break;
-                    case "ObjectId[]": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (ObjectId[])value)); break;
+                    case "String[]":
+                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (string[]) value));
+                        break;
+                    case "Int32[]":
+                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (int[]) value));
+                        break;
+                    case "Int64[]":
+                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (long[]) value));
+                        break;
+                    case "ObjectId[]":
+                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (ObjectId[]) value));
+                        break;
                     default: throw new Exception("This array type is not supported");
                 }
             }
@@ -234,14 +252,19 @@ namespace Sikiro.Nosql.Mongo.Extension
             {
                 switch (node.Type.GenericTypeArguments[0].Name)
                 {
-                    case "String": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (List<string>)value)); break;
-                    case "Int32": UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (List<int>)value)); break;
+                    case "String":
+                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (List<string>) value));
+                        break;
+                    case "Int32":
+                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (List<int>) value));
+                        break;
                     default:
-                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (IList)value));
+                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (IList) value));
                         break;
                 }
             }
         }
+
         #endregion
 
         #region 访问常量表达式
@@ -258,6 +281,7 @@ namespace Sikiro.Nosql.Mongo.Extension
 
             return node;
         }
+
         #endregion
 
         #region 访问成员表达式
@@ -280,14 +304,16 @@ namespace Sikiro.Nosql.Mongo.Extension
                 var value = lambda.Compile().Invoke();
 
                 if (node.Type.IsEnum)
-                    value = (int)value;
+                    value = (int) value;
 
                 UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, value));
             }
 
             return node;
         }
+
         #endregion
     }
+
     #endregion
 }

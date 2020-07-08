@@ -63,6 +63,29 @@ getResult.Name = "superskychen";
 mongoRepository.Update(getResult);
 ```
 
+#### Arrary Action
+add one no repeat item
+```c#
+mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
+            {
+                AddressList = a.AddressList.AddToSet("skychen")
+            });
+```
+delete one of array item
+```c#
+mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
+            {
+                AddressList = a.AddressList.Pull("skychen")
+            });
+```
+add one item
+```c#
+mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
+            {
+                AddressList = a.AddressList.Push("skychen")
+            });
+```
+
 ### DELETE
 Delete according to the condition
 ```c#

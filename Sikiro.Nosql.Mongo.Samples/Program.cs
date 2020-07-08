@@ -2,6 +2,7 @@
 using System.Collections.Generic;
 using MongoDB.Bson.Serialization.Attributes;
 using Sikiro.Nosql.Mongo.Base;
+using Sikiro.Nosql.Mongo.Extension;
 
 namespace Sikiro.Nosql.Mongo.Samples
 {
@@ -9,7 +10,7 @@ namespace Sikiro.Nosql.Mongo.Samples
     {
         static void Main(string[] args)
         {
-            var url = "";
+            var url = "mongodb://192.168.88.141:27017/chengongtest";
             var mongoRepository = new MongoRepository(url);
 
             var u = new User
@@ -35,22 +36,34 @@ namespace Sikiro.Nosql.Mongo.Samples
 
             var upResulr = mongoRepository.GetAndUpdate<User>(a => a.Id == u.Id, a => new User { Sex = Sex.Son });
 
+            mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
+            {
+                AddressList = a.AddressList.AddToSet("asd1231123")
+            });
+
+            mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
+            {
+                AddressList = a.AddressList.Pull("asd1231123")
+            });
+
+            mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
+            {
+                AddressList = a.AddressList.Push("asd1231123")
+            });
+
             var getResult = mongoRepository.Get<User>(a => a.Id == u.Id);
             getResult.Name = "superskychen";
 
             mongoRepository.Update(getResult);
 
-
-
             mongoRepository.Exists<User>(a => a.Id == u.Id);
 
             mongoRepository.Delete<User>(a => a.Id == u.Id);
 
-
         }
     }
 
-    [Mongo("geshiimdb", "User3")]
+    [Mongo("chengongtest", "User3")]
     public class User : MongoEntity
     {
         public string Name { get; set; }
