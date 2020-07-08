@@ -36,10 +36,15 @@ namespace Sikiro.Nosql.Mongo.Samples
 
             var upResulr = mongoRepository.GetAndUpdate<User>(a => a.Id == u.Id, a => new User { Sex = Sex.Son });
 
+            u.AddressList = new List<string> {"111", "2222"};
+            mongoRepository.Update(u);
+
+            var q = new User { AddressList = new List<string> { "111", "2222" } };
             mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
             {
-                AddressList = a.AddressList.AddToSet("asd1231123")
+                AddressList = q.AddressList
             });
+
 
             mongoRepository.Update<User>(a => a.Id == u.Id, a => new User
             {

@@ -16,7 +16,7 @@ namespace Sikiro.Nosql.Mongo.Extension
     /// Mongo更新字段表达式解析
     /// </summary>
     /// <typeparam name="T"></typeparam>
-    internal class MongoExpression<T> : ExpressionVisitor
+    internal class MongoUpdateExpression<T> : ExpressionVisitor
     {
         #region 成员变量
 
@@ -25,7 +25,7 @@ namespace Sikiro.Nosql.Mongo.Extension
         /// </summary>
         internal List<UpdateDefinition<T>> UpdateDefinitionList = new List<UpdateDefinition<T>>();
 
-        private string _fieldname;
+        private string _fileName;
 
         #endregion
 
@@ -38,7 +38,7 @@ namespace Sikiro.Nosql.Mongo.Extension
         /// <returns></returns>
         public static List<UpdateDefinition<T>> GetUpdateDefinition(Expression<Func<T, T>> expression)
         {
-            var mongoDb = new MongoExpression<T>();
+            var mongoDb = new MongoUpdateExpression<T>();
 
             mongoDb.Resolve(expression);
             return mongoDb.UpdateDefinitionList;
@@ -74,14 +74,14 @@ namespace Sikiro.Nosql.Mongo.Extension
             foreach (var item in bingdings)
             {
                 var memberAssignment = (MemberAssignment) item;
-                _fieldname = item.Member.Name;
+                _fileName = item.Member.Name;
 
                 if (memberAssignment.Expression.NodeType == ExpressionType.MemberInit)
                 {
                     var lambda =
                         Expression.Lambda<Func<object>>(Expression.Convert(memberAssignment.Expression, Types.Object));
                     var value = lambda.Compile().Invoke();
-                    UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, value));
+                    UpdateDefinitionList.Add(Builders<T>.Update.Set(_fileName, value));
                 }
                 else if (memberAssignment.Expression.NodeType == ExpressionType.Call)
                 {
@@ -112,19 +112,19 @@ namespace Sikiro.Nosql.Mongo.Extension
             {
                 case "Push":
                 {
-                    var updateDefinition = Builders<T>.Update.Push(_fieldname, value);
+                    var updateDefinition = Builders<T>.Update.Push(_fileName, value);
                     UpdateDefinitionList.Add(updateDefinition);
                 }
                     break;
                 case "Pull":
                 {
-                    var updateDefinition = Builders<T>.Update.Pull(_fieldname, value);
+                    var updateDefinition = Builders<T>.Update.Pull(_fileName, value);
                     UpdateDefinitionList.Add(updateDefinition);
                 }
                     break;
                 case "AddToSet":
                 {
-                    var updateDefinition = Builders<T>.Update.AddToSet(_fieldname, value);
+                    var updateDefinition = Builders<T>.Update.AddToSet(_fileName, value);
                     UpdateDefinitionList.Add(updateDefinition);
                 }
                     break;
@@ -184,11 +184,11 @@ namespace Sikiro.Nosql.Mongo.Extension
                 }
                 else
                 {
-                    throw new Exception(_fieldname + "不支持该类型操作");
+                    throw new Exception(_fileName + "不支持该类型操作");
                 }
             }
 
-            var updateDefinition = Builders<T>.Update.Inc(_fieldname, value);
+            var updateDefinition = Builders<T>.Update.Inc(_fileName, value);
 
             UpdateDefinitionList.Add(updateDefinition);
 
@@ -229,40 +229,8 @@ namespace Sikiro.Nosql.Mongo.Extension
         {
             var lambda = Expression.Lambda(node);
             var value = lambda.Compile().DynamicInvoke();
-            if (node.Type.IsArray)
-            {
-                switch (node.Type.Name)
-                {
-                    case "String[]":
-                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (string[]) value));
-                        break;
-                    case "Int32[]":
-                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (int[]) value));
-                        break;
-                    case "Int64[]":
-                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (long[]) value));
-                        break;
-                    case "ObjectId[]":
-                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (ObjectId[]) value));
-                        break;
-                    default: throw new Exception("This array type is not supported");
-                }
-            }
-            else
-            {
-                switch (node.Type.GenericTypeArguments[0].Name)
-                {
-                    case "String":
-                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (List<string>) value));
-                        break;
-                    case "Int32":
-                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (List<int>) value));
-                        break;
-                    default:
-                        UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, (IList) value));
-                        break;
-                }
-            }
+            UpdateDefinitionList.Add(Builders<T>.Update.Set(_fileName, (IList)value));
+
         }
 
         #endregion
@@ -277,7 +245,7 @@ namespace Sikiro.Nosql.Mongo.Extension
         /// <returns></returns>
         protected override Expression VisitConstant(ConstantExpression node)
         {
-            UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, node.Value));
+            UpdateDefinitionList.Add(Builders<T>.Update.Set(_fileName, node.Value));
 
             return node;
         }
@@ -306,7 +274,7 @@ namespace Sikiro.Nosql.Mongo.Extension
                 if (node.Type.IsEnum)
                     value = (int) value;
 
-                UpdateDefinitionList.Add(Builders<T>.Update.Set(_fieldname, value));
+                UpdateDefinitionList.Add(Builders<T>.Update.Set(_fileName, value));
             }
 
             return node;
