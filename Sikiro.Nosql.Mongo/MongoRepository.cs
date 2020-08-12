@@ -1008,7 +1008,7 @@ namespace Sikiro.Nosql.Mongo
 
         #endregion
 
-        #region 分页
+        #region 分页（采用了skip在数据量大了后会有性能问题，建议使用瀑布流加载+条件索引）
 
         #region 分页（同步）
 
