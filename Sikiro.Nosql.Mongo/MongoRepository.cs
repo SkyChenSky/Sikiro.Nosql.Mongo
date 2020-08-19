@@ -1206,11 +1206,11 @@ namespace Sikiro.Nosql.Mongo
         /// <typeparam name="T"></typeparam>
         /// <param name="predicate">查询条件</param>
         /// <returns></returns>
-        public bool Exists<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
+        public bool Exists<T>(Expression<Func<T, bool>> predicate = null) where T : MongoEntity
         {
             var coll = GetCollection<T>();
 
-            var result = coll.CountDocuments(predicate);
+            var result = predicate != null ? coll.CountDocuments(predicate) : coll.EstimatedDocumentCount();
 
             return result > 0;
         }
@@ -1223,11 +1223,11 @@ namespace Sikiro.Nosql.Mongo
         /// <param name="collection">集合</param>
         /// <param name="predicate">查询条件</param>
         /// <returns></returns>
-        public bool Exists<T>(string database, string collection, Expression<Func<T, bool>> predicate) where T : MongoEntity
+        public bool Exists<T>(string database, string collection, Expression<Func<T, bool>> predicate = null) where T : MongoEntity
         {
             var coll = GetCollection<T>(database, collection);
 
-            var result = coll.CountDocuments(predicate);
+            var result = predicate != null ? coll.CountDocuments(predicate) : coll.EstimatedDocumentCount();
 
             return result > 0;
         }
@@ -1239,11 +1239,11 @@ namespace Sikiro.Nosql.Mongo
         /// </summary>
         /// <param name="predicate">条件</param>
         /// <returns></returns>
-        public long Count<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
+        public long Count<T>(Expression<Func<T, bool>> predicate = null) where T : MongoEntity
         {
             var coll = GetCollection<T>();
 
-            return coll.CountDocuments(predicate);
+            return predicate != null ? coll.CountDocuments(predicate) : coll.EstimatedDocumentCount();
         }
 
         /// <summary>
@@ -1253,11 +1253,11 @@ namespace Sikiro.Nosql.Mongo
         /// <param name="collection">集合</param>
         /// <param name="predicate">条件</param>
         /// <returns></returns>
-        public long Count<T>(string database, string collection, Expression<Func<T, bool>> predicate) where T : MongoEntity
+        public long Count<T>(string database, string collection, Expression<Func<T, bool>> predicate = null) where T : MongoEntity
         {
             var coll = GetCollection<T>(database, collection);
 
-            return coll.CountDocuments(predicate);
+            return predicate != null ? coll.CountDocuments(predicate) : coll.EstimatedDocumentCount();
         }
         #endregion
 

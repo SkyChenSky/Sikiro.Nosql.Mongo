@@ -1,5 +1,7 @@
 ﻿using System;
 using System.Collections.Generic;
+using System.Diagnostics;
+using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
 using Sikiro.Nosql.Mongo.Base;
 using Sikiro.Nosql.Mongo.Extension;
@@ -12,19 +14,11 @@ namespace Sikiro.Nosql.Mongo.Samples
         {
             var url = "mongodb://192.168.88.141:27017/chengongtest";
             var userRepository = new UserRepository(url);
-            userRepository.Add(new User2
-            {
-                Name = "skychen",
-                BirthDateTime = new DateTime(1991, 2, 2),
-                AddressList = new List<string> { "guangdong", "guangzhou" },
-                Sex = Sex.Son,
-                Son = new User
-                {
-                    Name = "xiaochenpi",
-                    BirthDateTime = DateTime.Now
-                }
-            });
 
+            var sw = Stopwatch.StartNew();
+            var qwe = userRepository.Count<User2>(a => a.Age == 1000);
+
+            var time = sw.Elapsed.TotalSeconds;
 
             var mongoRepository = new MongoRepository(url);
 
