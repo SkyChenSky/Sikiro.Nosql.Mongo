@@ -1229,7 +1229,7 @@ namespace Sikiro.Nosql.Mongo
         /// </summary>
         /// <param name="predicate">条件</param>
         /// <returns></returns>
-        public long CountDocuments<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
+        public long Count<T>(Expression<Func<T, bool>> predicate) where T : MongoEntity
         {
             var coll = GetCollection<T>();
 
@@ -1243,7 +1243,7 @@ namespace Sikiro.Nosql.Mongo
         /// <param name="collection">集合</param>
         /// <param name="predicate">条件</param>
         /// <returns></returns>
-        public long CountDocuments<T>(string database, string collection, Expression<Func<T, bool>> predicate) where T : MongoEntity
+        public long Count<T>(string database, string collection, Expression<Func<T, bool>> predicate) where T : MongoEntity
         {
             var coll = GetCollection<T>(database, collection);
 
