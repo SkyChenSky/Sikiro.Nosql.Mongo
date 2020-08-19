@@ -21,10 +21,17 @@ namespace Sikiro.Nosql.Mongo
     {
         #region 初始化
         private readonly MongoClient _mongoClient;
+        private string DataBaseName;
 
         public MongoRepository(string connectionString)
         {
             _mongoClient = new MongoClient(connectionString);
+        }
+
+        public MongoRepository(string connectionString, string dataBaseName)
+        {
+            _mongoClient = new MongoClient(connectionString);
+            DataBaseName = dataBaseName;
         }
 
         static MongoRepository()
@@ -56,6 +63,9 @@ namespace Sikiro.Nosql.Mongo
 
         public IMongoCollection<T> GetCollection<T>()
         {
+            if (!string.IsNullOrEmpty(DataBaseName))
+                return GetCollection<T>(DataBaseName, typeof(T).Name);
+
             var mongoAttribute = GetMongoAttribute<T>();
 
             return GetCollection<T>(mongoAttribute.Database, mongoAttribute.Collection ?? typeof(T).Name);

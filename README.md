@@ -34,6 +34,31 @@ public class User : MongoEntity
     public List<string> AddressList { get; set; }
 }
 ```
+Or no user MongoAttribute and set default database name for many repository such as:
+```c#
+public class UserRepository : MongoRepository
+{
+    public UserRepository(string connectionString) : base(connectionString, "chengongtest")
+    {
+    }
+}
+
+public class User : MongoEntity
+{
+    public string Name { get; set; }
+
+    [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
+    public DateTime BirthDateTime { get; set; }
+
+    public User Son { get; set; }
+
+    public int Sex { get; set; }
+
+    public List<string> AddressList { get; set; }
+}
+
+var userRepository = new UserRepository(url);
+```
 
 ### Add
 ```c#

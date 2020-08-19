@@ -11,6 +11,21 @@ namespace Sikiro.Nosql.Mongo.Samples
         static void Main(string[] args)
         {
             var url = "mongodb://192.168.88.141:27017/chengongtest";
+            var userRepository = new UserRepository(url);
+            userRepository.Add(new User2
+            {
+                Name = "skychen",
+                BirthDateTime = new DateTime(1991, 2, 2),
+                AddressList = new List<string> { "guangdong", "guangzhou" },
+                Sex = Sex.Son,
+                Son = new User
+                {
+                    Name = "xiaochenpi",
+                    BirthDateTime = DateTime.Now
+                }
+            });
+
+
             var mongoRepository = new MongoRepository(url);
 
             var u = new User
@@ -36,7 +51,7 @@ namespace Sikiro.Nosql.Mongo.Samples
 
             var upResulr = mongoRepository.GetAndUpdate<User>(a => a.Id == u.Id, a => new User { Sex = Sex.Son });
 
-            u.AddressList = new List<string> {"111", "2222"};
+            u.AddressList = new List<string> { "111", "2222" };
             mongoRepository.Update(u);
 
             var q = new User { AddressList = new List<string> { "111", "2222" } };
@@ -70,6 +85,22 @@ namespace Sikiro.Nosql.Mongo.Samples
 
     [Mongo("chengongtest", "User3")]
     public class User : MongoEntity
+    {
+        public string Name { get; set; }
+
+        [BsonDateTimeOptions(Kind = DateTimeKind.Local)]
+        public DateTime BirthDateTime { get; set; }
+
+        public User Son { get; set; }
+
+        public Sex Sex { get; set; }
+
+        public int Age { get; set; }
+
+        public List<string> AddressList { get; set; }
+    }
+
+    public class User2 : MongoEntity
     {
         public string Name { get; set; }
 
